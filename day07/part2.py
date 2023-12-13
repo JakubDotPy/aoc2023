@@ -8,7 +8,7 @@ from typing import ClassVar
 
 import pytest
 
-from support import timing
+import support
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
@@ -148,7 +148,7 @@ def compute(s: str) -> int:
     return sum(wins)
 
 
-# @pytest.mark.solved
+@pytest.mark.solved
 @pytest.mark.parametrize(
     ('input_s', 'expected'),
     (
@@ -164,7 +164,7 @@ def main() -> int:
     parser.add_argument('data_file', nargs='?', default=INPUT_TXT)
     args = parser.parse_args()
 
-    with open(args.data_file) as f, timing():
+    with open(args.data_file) as f, support.timing():
         print(compute(f.read()))
 
     return 0
