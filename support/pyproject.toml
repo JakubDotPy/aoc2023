@@ -1,0 +1,11 @@
+[project]
+name = "support"
+version = "0.1.0"
+requires-python = ">= 3.9"
+
+[project.scripts]
+download-input = "support:download_input"
+new-day = "support:new_day"
+
+[tool.setuptools]
+py-modules = ["support"]

@@ -1,3 +1,4 @@
 -e support
 pytest
 networkx
+shapely

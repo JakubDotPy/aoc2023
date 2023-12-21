@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import enum
+import io
 import os
 import re
 import shutil
@@ -9,7 +10,11 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
+from dataclasses import field
+from functools import total_ordering
 from pathlib import Path
+from typing import ClassVar
 from typing import Generator
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +38,7 @@ def timing(name: str = '') -> Generator[None, None, None]:
 
 
 def _get_cookie_headers() -> dict[str, str]:
-    with open(os.path.join(HERE, '../.env')) as f:
+    with open(os.path.join(HERE, '../../.env')) as f:
         contents = f.read().strip()
     return {'Cookie': contents}
 
@@ -135,37 +140,6 @@ def new_day() -> None:
 
 # --- helper functions and classes
 
-def adjacent_4(x: int, y: int) -> Generator[tuple[int, int], None, None]:
-    yield x, y - 1
-    yield x + 1, y
-    yield x, y + 1
-    yield x - 1, y
-
-
-def adjacent_8(x: int, y: int) -> Generator[tuple[int, int], None, None]:
-    for y_d in (-1, 0, 1):
-        for x_d in (-1, 0, 1):
-            if y_d == x_d == 0:
-                continue
-            yield x + x_d, y + y_d
-
-
-def parse_coords_int(s: str) -> dict[tuple[int, int], int]:
-    coords = {}
-    for y, line in enumerate(s.splitlines()):
-        for x, c in enumerate(line):
-            coords[(x, y)] = int(c)
-    return coords
-
-
-def parse_coords_hash(s: str) -> set[tuple[int, int]]:
-    coords = set()
-    for y, line in enumerate(s.splitlines()):
-        for x, c in enumerate(line):
-            if c == '#':
-                coords.add((x, y))
-    return coords
-
 
 def parse_numbers_split(s: str) -> list[int]:
     return [int(x) for x in s.split()]
@@ -223,3 +197,123 @@ class Direction4(enum.Enum):
 
     def apply(self, x: int, y: int, *, n: int = 1) -> tuple[int, int]:
         return self.x * n + x, self.y * n + y
+
+    @property
+    def chr(self) -> str:
+        chr_map = {
+            Direction4.UP: '^',
+            Direction4.RIGHT: '>',
+            Direction4.DOWN: 'v',
+            Direction4.LEFT: '<',
+        }
+        return chr_map[self]
+
+
+@total_ordering
+@dataclass
+class Pointer:
+    x: int = 0
+    y: int = 0
+    direction: Direction4 = field(default=Direction4.RIGHT)
+    grid: 'Grid' = field(init=False, repr=False)
+
+    def move(self, direction: Direction4 = None, n: int = 1) -> Pointer:
+        direction = direction or self.direction
+        if not direction:
+            raise ValueError('no direction to move')
+        dx, dy = direction.value
+        self.x += n * dx
+        self.y += n * dy
+        return self
+
+    def look(self, direction: Direction4 = None, n: int = 1) -> str:
+        if not direction:
+            direction = self.direction
+
+        dx, dy = direction.value
+        x = self.x + n * dx
+        y = self.y + n * dy
+        return self.grid[(x, y)]
+
+    @property
+    def coords(self):
+        return self.x, self.y
+
+    @property
+    def value(self) -> str | None:
+        return self.grid.get((self.x, self.y), None)
+
+    def __add__(self, other: Pointer) -> Pointer:
+        return Pointer(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: Pointer) -> Pointer:
+        return Pointer(self.x - other.x, self.y - other.y)
+
+    def __lt__(self, other: Pointer) -> bool:
+        return self.x < other.x and self.y < other.y
+
+    def __eq__(self, other: Pointer) -> bool:
+        return self.x == other.x and self.y == other.y
+
+    @staticmethod
+    def adjacent_4(x: int, y: int) -> Generator[tuple[int, int], None, None]:
+        yield x, y - 1
+        yield x + 1, y
+        yield x, y + 1
+        yield x - 1, y
+
+    @staticmethod
+    def adjacent_8(x: int, y: int) -> Generator[tuple[int, int], None, None]:
+        for y_d in (-1, 0, 1):
+            for x_d in (-1, 0, 1):
+                if y_d == x_d == 0:
+                    continue
+                yield x + x_d, y + y_d
+
+    def __str__(self) -> str:
+        dir_str = f', direction={self.direction.chr!r}' if self.direction else ''
+        return f'Pointer(x={self.x}, y={self.y}{dir_str})'
+
+    __repr__ = __str__
+
+
+@dataclass
+class Grid(dict):
+    width: int = field(default=0, init=False)
+    height: int = field(default=0, init=False)
+    pointers: list[Pointer] = field(default_factory=list, init=False)
+
+    def add_pointer(self, pointer: Pointer) -> None:
+        pointer.grid = self
+        self.pointers.append(pointer)
+
+    @property
+    def pointer(self):
+        return self.pointers[0]
+
+    @classmethod
+    def from_string(cls, s: str, map_fn: callable = str) -> Grid:
+        grid = cls()
+        for y, line in enumerate(s.splitlines()):
+            for x, char in enumerate(line):
+                grid[(x, y)] = map_fn(char)
+        grid.width, grid.height = x, y
+        return grid
+
+    @staticmethod
+    def parse_coords_hash(s: str) -> set[tuple[int, int]]:
+        """use for walls etc."""
+        coords = set()
+        for y, line in enumerate(s.splitlines()):
+            for x, c in enumerate(line):
+                if c == '#':
+                    coords.add((x, y))
+        return coords
+
+    def __str__(self) -> str:
+        with io.StringIO() as s_buff:
+            for y in range(self.height + 1):
+                for x in range(self.width + 1):
+                    print(self[(x, y)], end='', file=s_buff)
+                print(file=s_buff)
+            return s_buff.getvalue()
