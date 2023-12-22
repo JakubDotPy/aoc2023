@@ -108,7 +108,7 @@ def compute(s: str) -> int:
     return num_inside
 
 
-@pytest.mark.solved
+# @pytest.mark.solved
 @pytest.mark.parametrize(
     ('input_s', 'expected'),
     (

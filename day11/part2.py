@@ -4,7 +4,7 @@ import os.path
 
 import pytest
 
-from support import support
+import support
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
@@ -21,7 +21,7 @@ INPUT_S = '''\
 .......#..
 #...#.....
 '''
-EXPECTED = 374
+EXPECTED = 82000210
 
 
 def compute(s: str) -> int:
