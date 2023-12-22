@@ -5,7 +5,7 @@ import os.path
 import pytest
 import shapely
 
-from support import support
+import support
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
@@ -98,9 +98,11 @@ def compute(s: str) -> int:
             break
 
     path_geometry = shapely.Polygon(path)
+    path = set(path)
     num_inside = sum(
         shapely.contains_xy(path_geometry, *coord)
         for coord in grid
+        if coord not in path
     )
 
     return num_inside

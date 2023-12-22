@@ -1,4 +1,4 @@
 -e support
-pytest
+pytest~=7.4.3
 networkx
-shapely
+shapely~=2.0.2
