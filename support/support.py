@@ -167,6 +167,10 @@ def print_coords_hash(coords: set[tuple[int, int]]) -> None:
     print(format_coords_hash(coords))
 
 
+class OutOfBounds(Exception):
+    pass
+
+
 class Direction4(enum.Enum):
     UP = (0, -1)
     RIGHT = (1, 0)
@@ -214,14 +218,13 @@ class Direction4(enum.Enum):
 class Pointer:
     x: int = 0
     y: int = 0
-    direction: Direction4 = field(default=Direction4.RIGHT)
+    direction: Direction4 = None
     grid: 'Grid' = field(init=False, repr=False)
 
-    def move(self, direction: Direction4 = None, n: int = 1) -> Pointer:
-        direction = direction or self.direction
-        if not direction:
-            raise ValueError('no direction to move')
-        dx, dy = direction.value
+    def move(self, n: int = 1) -> Pointer:
+        if not self.direction:
+            raise ValueError('pointer has no direction')
+        dx, dy = self.direction.value
         self.x += n * dx
         self.y += n * dy
         return self
@@ -233,7 +236,12 @@ class Pointer:
         dx, dy = direction.value
         x = self.x + n * dx
         y = self.y + n * dy
-        return self.grid[(x, y)]
+        try:
+            value = self.grid[(x, y)]
+        except KeyError:
+            raise OutOfBounds()
+        else:
+            return value
 
     @property
     def coords(self):
