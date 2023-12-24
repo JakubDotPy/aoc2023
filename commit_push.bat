@@ -17,11 +17,8 @@ for /d %%D in (day*) do (
 
 rem Check if a folder was found
 if not "%latestFolder%"=="" (
-    rem Move into the latest folder
-    cd "%latestFolder%"
-
     rem Git operations
-    git add -A
+    git add "%latestFolder%\*"
     git commit -m "%latestFolder%"
     git push
 
