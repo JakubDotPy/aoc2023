@@ -57,22 +57,12 @@ class Boxes(defaultdict):
         h = hash(lens)
 
         def remove(lens):
-            keep = lambda l: l.label != lens.label
-            self[h] = list(filter(keep, self[h]))
+            self[h].pop(lens.label, None)
             if not self[h]:
                 self.pop(h)
 
         def insert(lens):
-            current_lenses = self[h]
-            if any(l.label == lens.label for l in current_lenses):
-                # replace
-                for i, l in enumerate(current_lenses):
-                    if l.label == lens.label:
-                        current_lenses[i] = lens
-                        break
-            else:
-                # append
-                current_lenses.append(lens)
+            self[h][lens.label] = lens.focal_length
 
         actions = {
             '-': remove,
@@ -82,7 +72,7 @@ class Boxes(defaultdict):
 
 
 def compute(s: str) -> int:
-    boxes = Boxes(list)
+    boxes = Boxes(dict)
     lenses = (Lens(lens_str) for lens_str in s.strip().split(','))
 
     for lens in lenses:
@@ -90,11 +80,11 @@ def compute(s: str) -> int:
 
     total = 0
     for box_n, lenses in boxes.items():
-        for lens_index, lens in enumerate(lenses):
+        for lens_index, focal_length in enumerate(lenses.values(), start=1):
             total += math.prod((
                 box_n + 1,
-                lens_index + 1,
-                lens.focal_length,
+                lens_index,
+                focal_length,
             ))
 
     return total
