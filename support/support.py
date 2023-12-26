@@ -261,7 +261,12 @@ class Pointer:
         return self.x < other.x and self.y < other.y
 
     def __eq__(self, other: Pointer) -> bool:
-        return self.x == other.x and self.y == other.y
+        same_coords = self.x == other.x and self.y == other.y
+        same_direction = self.direction == other.direction
+        return same_coords and same_direction
+
+    def __hash__(self):
+        return hash(self.coords + self.direction.value)
 
     @staticmethod
     def adjacent_4(x: int, y: int) -> Generator[tuple[int, int], None, None]:
@@ -289,15 +294,16 @@ class Pointer:
 class Grid(dict):
     width: int = field(default=0, init=False)
     height: int = field(default=0, init=False)
-    pointers: list[Pointer] = field(default_factory=list, init=False)
+    pointers: set[Pointer] = field(default_factory=set, init=False)
 
-    def add_pointer(self, pointer: Pointer) -> None:
-        pointer.grid = self
-        self.pointers.append(pointer)
+    def add_pointers(self, *pointers: Pointer) -> None:
+        for pointer in pointers:
+            pointer.grid = self
+            self.pointers.add(pointer)
 
     @property
     def pointer(self):
-        return self.pointers[0]
+        return min(self.pointers)
 
     @classmethod
     def from_string(cls, s: str, map_fn: callable = str) -> Grid:
