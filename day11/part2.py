@@ -21,10 +21,13 @@ INPUT_S = '''\
 .......#..
 #...#.....
 '''
-EXPECTED = 82000210
+EXPAND_1 = 9
+EXPECTED_1 = 1030
+EXPAND_2 = 99
+EXPECTED_2 = 8410
 
 
-def compute(s: str) -> int:
+def compute(s: str, expand: int) -> int:
     empty_rows = set()
     empty_cols = set()
     galaxies = set()
@@ -40,7 +43,7 @@ def compute(s: str) -> int:
         if '#' not in col:
             empty_cols.add(x)
 
-    dx = dy = 999_999
+    dx = dy = expand
     total_distance = 0
     for (ax, ay), (bx, by) in itertools.combinations(galaxies, 2):
         ax, bx = sorted((ax, bx))
@@ -56,13 +59,14 @@ def compute(s: str) -> int:
 
 @pytest.mark.solved
 @pytest.mark.parametrize(
-    ('input_s', 'expected'),
+    ('input_s', 'expand', 'expected'),
     (
-            (INPUT_S, EXPECTED),
+            (INPUT_S, EXPAND_1, EXPECTED_1),
+            (INPUT_S, EXPAND_2, EXPECTED_2),
     ),
 )
-def test(input_s: str, expected: int) -> None:
-    assert compute(input_s) == expected
+def test(input_s: str, expand: int, expected: int) -> None:
+    assert compute(input_s, expand) == expected
 
 
 def main() -> int:
@@ -71,7 +75,7 @@ def main() -> int:
     args = parser.parse_args()
 
     with open(args.data_file) as f, support.timing():
-        print(compute(f.read()))
+        print(compute(f.read(), 999_999))
 
     return 0
 

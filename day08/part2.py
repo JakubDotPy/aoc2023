@@ -50,6 +50,7 @@ def compute(s: str) -> int:
 
 
 @pytest.mark.solved
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ('input_s', 'expected'),
     (
